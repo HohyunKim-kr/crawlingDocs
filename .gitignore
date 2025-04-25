@@ -1,0 +1,27 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+
+# 가상환경
+venv/
+crawlingDocs/venv/
+
+# 실행 시 생성된 파일
+downloads/
+*.csv
+*.pdf
+*.md  # downloads/에 .md 파일이 있으므로 (PDF로 의도된 경우 제외)
+
+# Python 캐시 및 임시 파일
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 환경 설정 파일 (가상환경 내부)
+pyvenv.cfg
+
+# IDE 및 에디터 파일 (VS Code 관련)
+.vscode/
+
+# 기타 임시 파일
+*.log
+*.tmp

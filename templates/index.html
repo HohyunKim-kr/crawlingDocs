@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>웹 크롤링 및 번역</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>웹 크롤링 및 번역</h1>
+        <form method="POST" action="/convert" class="crawl-form">
+            <div class="input-group">
+                <label for="url">크롤링할 URL을 입력하세요:</label>
+                <input type="text" id="url" name="url" placeholder="https://example.com" required>
+            </div>
+            <div class="language-group">
+                <label>언어 선택:</label>
+                <button type="submit" name="language" value="ko" class="btn btn-korean">한국어 (번역)</button>
+                <button type="submit" name="language" value="en" class="btn btn-english">영어 (원본)</button>
+            </div>
+        </form>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+        {% if pdf_filename %}
+            <p class="success">
+                PDF 생성 완료! (언어: {{ '한국어' if language == 'ko' else '영어' }})
+                <a href="/download/{{ pdf_filename }}" class="download-link">다운로드</a>
+            </p>
+        {% endif %}
+    </div>
+</body>
+</html>

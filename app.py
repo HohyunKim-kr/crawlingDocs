@@ -20,6 +20,7 @@ from PIL import Image
 from io import BytesIO
 import tempfile
 import os
+from uuid import uuid4
 from collections import deque
 
 app = Flask(__name__)
@@ -95,7 +96,7 @@ def parse_navigation_links(root_url):
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-software-rasterizer')
         options.add_argument('--remote-debugging-port=9222')
-        options.add_argument('--user-data-dir=/tmp/chrome-user-data-nav')
+        options.add_argument(f'--user-data-dir=/tmp/chrome-nav-{uuid4()}')
 
         driver = webdriver.Chrome(options=options)
         driver.get(root_url)
@@ -128,7 +129,7 @@ def crawl_docs(root_url):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-software-rasterizer')
     options.add_argument('--remote-debugging-port=9222')
-    options.add_argument('--user-data-dir=/tmp/chrome-user-data-docs')
+    options.add_argument(f'--user-data-dir=/tmp/chrome-docs-{uuid4()}')
 
     driver = webdriver.Chrome(options=options)
     while to_visit:

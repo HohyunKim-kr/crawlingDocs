@@ -1,3 +1,6 @@
+import os
+import shutil
+import logging
 from flask import Flask, render_template, request, send_file
 import requests
 from bs4 import BeautifulSoup
@@ -19,9 +22,12 @@ from selenium.webdriver.common.by import By
 from PIL import Image
 from io import BytesIO
 import tempfile
-import os
 from uuid import uuid4
 from collections import deque
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 translator = GoogleTranslator(source='en', target='ko')
@@ -43,6 +49,12 @@ def is_garbage_line(text):
 def normalize_url(url):
     parsed = urlparse(url)
     return urlunparse((parsed.scheme, parsed.netloc, parsed.path.rstrip('/'), parsed.params, parsed.query, ''))
+
+def get_unique_user_data_dir():
+    user_data_dir = f"/tmp/chrome-user-data-{uuid4()}"
+    if os.path.exists(user_data_dir):
+        shutil.rmtree(user_data_dir, ignore_errors=True)
+    return user_data_dir
 
 def try_sitemap_links(root_url):
     parsed = urlparse(root_url)
@@ -83,23 +95,18 @@ def try_sitemap_links(root_url):
                         if links:
                             return links
             except Exception as e:
-                print(f"❌ sitemap 접근 실패 (시도 {attempt+1}): {sitemap_url} — {e}")
+                logger.warning(f"❌ Sitemap 접근 실패 (시도 {attempt+1}): {sitemap_url} — {e}")
                 time.sleep(1)
     return []
 
 def parse_navigation_links(root_url):
+    driver = None
     try:
         options = Options()
         options.add_argument('--headless')
-        options.add_argument('--no-sandbox')                                                                
-        options.add_argument('--disable-gpu')
-        options.add_argument('--disable-software-rasterizer')
+        options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--disable-3d-apis')
-        options.add_argument('--disable-gl-drawing-for-tests')
-        options.add_argument('--use-gl=swiftshader')
-        options.add_argument('--remote-debugging-port=9222')
-        options.add_argument(f'--user-data-dir=/tmp/chrome-user-data-{uuid4()}')  # 중복 방지
+        options.add_argument(f'--user-data-dir={get_unique_user_data_dir()}')
 
         driver = webdriver.Chrome(options=options)
         driver.get(root_url)
@@ -114,68 +121,68 @@ def parse_navigation_links(root_url):
             if normalized.startswith(root_url) and normalized not in seen:
                 links.append(normalized)
                 seen.add(normalized)
-        driver.quit()
         return links
-    except:
+    except Exception as e:
+        logger.error(f"❌ Navigation 파싱 실패: {root_url} — {e}")
         return []
+    finally:
+        if driver:
+            driver.quit()
 
 def crawl_docs(root_url):
     structured_data = {}
     visited = set()
     all_links = try_sitemap_links(root_url) or parse_navigation_links(root_url)
     to_visit = deque([normalize_url(link) for link in all_links if 'sitemap' not in link.lower()])
-    
+
     options = Options()
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--disable-software-rasterizer')
     options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-3d-apis')
-    options.add_argument('--disable-gl-drawing-for-tests')
-    options.add_argument('--use-gl=swiftshader')
-    options.add_argument('--remote-debugging-port=9222')
-    options.add_argument(f'--user-data-dir=/tmp/chrome-user-data-{uuid4()}')  # 중복 방지
+    options.add_argument(f'--user-data-dir={get_unique_user_data_dir()}')
 
-    driver = webdriver.Chrome(options=options)
-    while to_visit:
-        url = to_visit.popleft()
-        if url in visited:
-            continue
-        visited.add(url)
-        print(f"✅ 수집 중: {url}")
-        try:
-            driver.get(url)
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
-            main = soup.find('main') or soup.find('article') or soup.find(class_=['content', 'doc-content', 'main-content', 'docs']) or soup.find(id=['__next', 'content', 'main']) or soup.find('section') or soup.find('div', {'role': 'main'}) or soup.body
-            if not main:
-                print(f"⚠️ 본문을 찾지 못해 스킵함: {url}")
+    driver = None
+    try:
+        driver = webdriver.Chrome(options=options)
+        while to_visit:
+            url = to_visit.popleft()
+            if url in visited:
                 continue
-            content = []
-            for el in main.find_all(['h1', 'h2', 'h3', 'p', 'li', 'img', 'table']):
-                if el.name == 'img':
-                    src = el.get('src')
-                    if src:
-                        img_url = urljoin(url, src)
-                        content.append(('img', img_url))
-                elif el.name == 'table':
-                    table_data = []
-                    for row in el.find_all('tr'):
-                        cells = [cell.get_text(strip=True) for cell in row.find_all(['th', 'td'])]
-                        table_data.append(cells)
-                    content.append(('table', table_data))
-                else:
-                    text = el.get_text().strip()
-                    if not is_unwanted_text(text) and not is_garbage_line(text):
-                        content.append((el.name, text))
-            if content:
-                structured_data[url] = content
-        except Exception as e:
-            print(f"❌ 오류: {url} — {e}")
-            continue
-        time.sleep(0.5)
-    driver.quit()
+            visited.add(url)
+            logger.info(f"✅ 수집 중: {url}")
+            try:
+                driver.get(url)
+                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+                soup = BeautifulSoup(driver.page_source, 'html.parser')
+                main = soup.find('main') or soup.find('article') or soup.find(class_=['content', 'doc-content', 'main-content', 'docs']) or soup.find(id=['__next', 'content', 'main']) or soup.find('section') or soup.find('div', {'role': 'main'}) or soup.body
+                if not main:
+                    logger.warning(f"⚠️ 본문을 찾지 못해 스킵함: {url}")
+                    continue
+                content = []
+                for el in main.find_all(['h1', 'h2', 'h3', 'p', 'li', 'img', 'table']):
+                    if el.name == 'img':
+                        src = el.get('src')
+                        if src:
+                            img_url = urljoin(url, src)
+                            content.append(('img', img_url))
+                    elif el.name == 'table':
+                        table_data = [[cell.get_text(strip=True) for cell in row.find_all(['th', 'td'])] for row in el.find_all('tr')]
+                        content.append(('table', table_data))
+                    else:
+                        text = el.get_text().strip()
+                        if not is_unwanted_text(text) and not is_garbage_line(text):
+                            content.append((el.name, text))
+                if content:
+                    structured_data[url] = content
+            except Exception as e:
+                logger.error(f"❌ 오류: {url} — {e}")
+                continue
+            time.sleep(0.5)
+    except Exception as e:
+        logger.error(f"❌ 크롤링 중 오류: {e}")
+    finally:
+        if driver:
+            driver.quit()
     return structured_data
 
 def draw_image_from_url(c, img_url, x, y, max_width, height):
@@ -196,7 +203,7 @@ def draw_image_from_url(c, img_url, x, y, max_width, height):
             os.unlink(tmp_img_path)
             return img_height + 10
     except Exception as e:
-        print(f"❌ 이미지 삽입 실패: {img_url} — {e}")
+        logger.warning(f"❌ 이미지 삽입 실패: {img_url} — {e}")
     return 14
 
 def create_pdf(data, output_path):
@@ -296,6 +303,7 @@ def convert():
         create_pdf(processed_data, pdf_path)
         return render_template('index.html', pdf_filename=pdf_filename, language=language)
     except Exception as e:
+        logger.error(f"❌ 변환 중 오류: {e}")
         return render_template('index.html', error=f"오류 발생: {str(e)}")
 
 @app.route('/download/<filename>')

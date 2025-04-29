@@ -95,6 +95,7 @@ def parse_navigation_links(root_url):
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-software-rasterizer')
         options.add_argument('--remote-debugging-port=9222')
+        options.add_argument('--user-data-dir=/tmp/chrome-user-data')
 
         driver = webdriver.Chrome(options=options)
         driver.get(root_url)

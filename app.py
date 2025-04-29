@@ -91,12 +91,15 @@ def parse_navigation_links(root_url):
     try:
         options = Options()
         options.add_argument('--headless')
+        options.add_argument('--no-sandbox')                                                                
         options.add_argument('--disable-gpu')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-software-rasterizer')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-3d-apis')
+        options.add_argument('--disable-gl-drawing-for-tests')
+        options.add_argument('--use-gl=swiftshader')
         options.add_argument('--remote-debugging-port=9222')
-        options.add_argument(f'--user-data-dir=/tmp/chrome-nav-{uuid4()}')
+        options.add_argument(f'--user-data-dir=/tmp/chrome-user-data-{uuid4()}')  # 중복 방지
 
         driver = webdriver.Chrome(options=options)
         driver.get(root_url)
@@ -124,12 +127,15 @@ def crawl_docs(root_url):
     
     options = Options()
     options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')
     options.add_argument('--disable-software-rasterizer')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-3d-apis')
+    options.add_argument('--disable-gl-drawing-for-tests')
+    options.add_argument('--use-gl=swiftshader')
     options.add_argument('--remote-debugging-port=9222')
-    options.add_argument(f'--user-data-dir=/tmp/chrome-docs-{uuid4()}')
+    options.add_argument(f'--user-data-dir=/tmp/chrome-user-data-{uuid4()}')  # 중복 방지
 
     driver = webdriver.Chrome(options=options)
     while to_visit:

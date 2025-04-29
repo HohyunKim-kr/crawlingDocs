@@ -251,6 +251,19 @@ def create_pdf(data, output_path):
                 y -= line_height
     c.save()
 
+def translate_docs(structured_data):
+    translated_data = []
+    for url, blocks in structured_data.items():
+        translated_blocks = []
+        for tag, text in blocks:
+            if tag in ['h1', 'h2', 'h3', 'p', 'li']:
+                translated_text = translator.translate(text)
+                translated_blocks.append((tag, translated_text))
+            else:
+                translated_blocks.append((tag, text))  # 이미지나 테이블은 그대로
+        translated_data.append((url, translated_blocks))
+    return translated_data
+
 @app.route('/')
 def index():
     return render_template('index.html')

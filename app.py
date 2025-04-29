@@ -120,9 +120,16 @@ def crawl_docs(root_url):
     visited = set()
     all_links = try_sitemap_links(root_url) or parse_navigation_links(root_url)
     to_visit = deque([normalize_url(link) for link in all_links if 'sitemap' not in link.lower()])
+    
     options = Options()
     options.add_argument('--headless')
     options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-software-rasterizer')
+    options.add_argument('--remote-debugging-port=9222')
+    options.add_argument('--user-data-dir=/tmp/chrome-user-data')
+
     driver = webdriver.Chrome(options=options)
     while to_visit:
         url = to_visit.popleft()

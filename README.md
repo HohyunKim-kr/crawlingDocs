@@ -24,23 +24,23 @@
 
 ```mermaid
 sequenceDiagram
-    participant U as 사용자
-    participant C as 클라이언트 (웹)
-    participant S as Flask 서버
-    participant B as Selenium + BS4 크롤러
-    participant G as 번역기 (GoogleTranslator)
-    participant P as PDF 엔진 (ReportLab)
+    participant 사용자
+    participant 웹클라이언트
+    participant Flask서버
+    participant 크롤러
+    participant 번역기
+    participant PDF엔진
 
-    U->>C: URL, 언어 입력
-    C->>S: POST /convert
-    S->>B: URL 크롤링 요청
-    B->>S: 구조화된 본문, 이미지, 코드블럭 전달
-    S->>G: 번역 요청 (선택 시)
-    G->>S: 번역된 데이터 반환
-    S->>P: PDF 생성 요청
-    P-->>S: PDF 파일 저장
-    S-->>C: 다운로드 링크 반환
-    C->>U: PDF 다운로드
+    사용자->>웹클라이언트: URL, 언어 입력
+    웹클라이언트->>Flask서버: POST /convert
+    Flask서버->>크롤러: URL 크롤링 요청
+    크롤러->>Flask서버: 구조화된 본문, 이미지, 코드블럭 전달
+    Flask서버->>번역기: 번역 요청 (선택 시)
+    번역기->>Flask서버: 번역된 데이터 반환
+    Flask서버->>PDF엔진: PDF 생성 요청
+    PDF엔진->>Flask서버: PDF 파일 저장
+    Flask서버->>웹클라이언트: 다운로드 링크 반환
+    웹클라이언트->>사용자: PDF 다운로드
 ---
 
 # 📄 crawlingDocs 프로젝트

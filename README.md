@@ -6,6 +6,7 @@
 - **목표**: 다양한 기술 문서 사이트에서 본문, 이미지, 테이블, 코드 블럭을 크롤링하여 PDF로 변환하고 한국어로 번역하는 도구 개발
 - **사용처**: 개발 문서 요약, 번역된 가이드 배포, 오프라인 문서화
 - **GitHub**: [https://github.com/HohyunKim-kr/crawlingDocs](https://github.com/HohyunKim-kr/crawlingDocs)
+- **Notion**: [https://rainbow-appeal-099.notion.site/crawlaingDocs-1e328f551d9780f48345f22da4cddfbd?pvs=4](https://rainbow-appeal-099.notion.site/crawlaingDocs-1e328f551d9780f48345f22da4cddfbd?pvs=4)
 
 
 ## 2. 전체 흐름 요약
